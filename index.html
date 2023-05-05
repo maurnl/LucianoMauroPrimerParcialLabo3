@@ -5,8 +5,582 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Primer Parcial Laboratorio de Programacion III</title>
+    <style>
+        .centrar-texto {
+            text-align: center;
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+    <script>
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const $contenedorTabla = document.getElementById("contenedor-tabla");
+            const $seleccionTipoPersona = document.getElementById("seleccion-tipo");
+            const $resultadoEdadPromedio = document.getElementById("resultadoEdadPromedio");
+            const $formDatos = document.getElementById("form-datos");
+            // Abm
+            const $formAbm = document.getElementById("form-abm");
+            const $seleccionTipoAbm = document.getElementById("tipoIngresado");
+            const $contenedorDatosHeroe = document.getElementById("props-heroe");
+            const $contenedorDatosVillano = document.getElementById("props-villano");
+            const $botonModificar = document.getElementById("btnAbmModificar");
+            const $botonEliminar = document.getElementById("btnAbmEliminar");
+            const $botonCrear = document.getElementById("btnAbmAceptar");
+
+            $botonEliminar.style.display = "none";
+            $botonModificar.style.display = "none";
+            $contenedorDatosVillano.style.display = "none";
+            $formAbm.style.display = "none"
+
+            mostrarTabla($contenedorTabla, "todos");
+            crearOpcionesColumnas("todos");
+
+            $seleccionTipoPersona.addEventListener("change", (e) => {
+                while ($contenedorTabla.hasChildNodes()) {
+                    $contenedorTabla.removeChild($contenedorTabla.firstChild)
+                }
+                mostrarTabla($contenedorTabla, e.target.value);
+                crearOpcionesColumnas(e.target.value);
+            });
+
+            $seleccionTipoAbm.addEventListener("change", (e) => {
+                $contenedorDatosHeroe.style.display = "none";
+                $contenedorDatosVillano.style.display = "none";
+
+                if(e.target.value == "heroe") {
+                    $contenedorDatosHeroe.style.display = "block";
+                } else {
+                    $contenedorDatosVillano.style.display = "block";
+                }
+            });
+
+            document.addEventListener("click", (event) => {
+
+                if(event.target.matches("#chkToggle")) {
+                    toggleVisibilidadColumna(event.target.value);
+                }
+
+                if(event.target.matches("#btnEdadPromedio")) {
+                    let seleccionados = obtenerFiltrados($seleccionTipoPersona.value);
+                    let acumulador = seleccionados.map(p => parseInt(p.edad)).reduce((acumulador, siguiente) => acumulador + siguiente);
+                    let resultado = acumulador / seleccionados.length;
+                    $resultadoEdadPromedio.value = resultado;
+                }
+
+                if(event.target.matches("#btnAgregar")) {
+                    $botonEliminar.style.display = "none";
+                    $botonModificar.style.display = "none";
+                    $formDatos.style.display = "none";
+                    $formAbm.style.display = "block";
+                    $botonCrear.style.display = "inline-block";
+                    document.getElementById("idIngresado").disabled = true;
+                    document.getElementById("idIngresado").value = "";
+                    document.getElementById("idIngresado").placeholder = "Autogenerado";
+                    document.getElementById("nombreIngresado").value = "";
+                    document.getElementById("apellidoIngresado").value = "";
+                    document.getElementById("edadIngresado").value = "";
+                    document.getElementById("alteregoIngresado").value = "";
+                    document.getElementById("ciudadIngresado").value = "";
+                    document.getElementById("publicadoIngresado").value = "";
+                    document.getElementById("enemigoIngresado").value = "";
+                    document.getElementById("robosIngresado").value = "";
+                    document.getElementById("asesinatosIngresado").value = "";
+                }
+
+                if(event.target.matches("#btnAbmAceptar")) {
+                    try{
+                        const nombre = document.getElementById("nombreIngresado").value;
+                        const apellido = document.getElementById("apellidoIngresado").value;
+                        const edad = document.getElementById("edadIngresado").value;
+                        const alterego = document.getElementById("alteregoIngresado").value;
+                        const ciudad = document.getElementById("ciudadIngresado").value;
+                        const publicado = document.getElementById("publicadoIngresado").value;
+                        const enemigo = document.getElementById("enemigoIngresado").value;
+                        const robos = document.getElementById("robosIngresado").value;
+                        const asesinatos = document.getElementById("asesinatosIngresado").value;
+                        let personaNueva;
+                        if($contenedorDatosHeroe.style.display != "none") {
+                            personaNueva = new Heroe(0, nombre, apellido, edad, alterego, ciudad, publicado);
+                        } else {
+                            personaNueva = new Villano(0, nombre, apellido, edad, enemigo, robos, asesinatos);
+                        }
+                        personaNueva.validarCrear();
+                        PersonaRepository.agregar(personaNueva);
+                        alert("Guardado");
+                        $formDatos.style.display = "block";
+                        $formAbm.style.display = "none";
+                        while ($contenedorTabla.hasChildNodes()) {
+                            $contenedorTabla.removeChild($contenedorTabla.firstChild)
+                        }
+                        mostrarTabla($contenedorTabla, "todos");
+                        crearOpcionesColumnas("todos");
+                        $seleccionTipoPersona.value = "persona";
+                    } catch(err) {
+                        alert(err);
+                    } finally {
+                        document.getElementById("idIngresado").disabled = false;
+                        document.getElementById("idIngresado").placeholder = "";
+                    }
+                }
+
+                if(event.target.matches("#btnAbmEliminar")) {
+                    PersonaRepository.eliminarPorId(document.getElementById("idIngresado").value);
+                    while ($contenedorTabla.hasChildNodes()) {
+                            $contenedorTabla.removeChild($contenedorTabla.firstChild)
+                        }
+                    mostrarTabla($contenedorTabla, "todos");
+                    crearOpcionesColumnas("todos");
+                    $seleccionTipoPersona.value = "persona";
+                    $formDatos.style.display = "block";
+                    $formAbm.style.display = "none";
+                }
+
+                if(event.target.matches("#btnAbmModificar")) {
+                    const nombre = document.getElementById("nombreIngresado").value;
+                    const apellido = document.getElementById("apellidoIngresado").value;
+                    const edad = document.getElementById("edadIngresado").value;
+                    const alterego = document.getElementById("alteregoIngresado").value;
+                    const ciudad = document.getElementById("ciudadIngresado").value;
+                    const publicado = document.getElementById("publicadoIngresado").value;
+                    const enemigo = document.getElementById("enemigoIngresado").value;
+                    const robos = document.getElementById("robosIngresado").value;
+                    const asesinatos = document.getElementById("asesinatosIngresado").value;
+                    let datosNuevos;
+                    if($contenedorDatosHeroe.style.display != "none") {
+                        datosNuevos = new Heroe(0, nombre, apellido, edad, alterego, ciudad, publicado);
+                    } else {
+                        datosNuevos = new Villano(0, nombre, apellido, edad, enemigo, robos, asesinatos);
+                    }
+                    PersonaRepository.modificar(document.getElementById("idIngresado").value, datosNuevos);
+                    while ($contenedorTabla.hasChildNodes()) {
+                            $contenedorTabla.removeChild($contenedorTabla.firstChild)
+                        }
+                    mostrarTabla($contenedorTabla, "todos");
+                    crearOpcionesColumnas("todos");
+                    $seleccionTipoPersona.value = "persona";
+                    $formDatos.style.display = "block";
+                    $formAbm.style.display = "none";
+                }
+
+                if(event.target.matches("#btnAbmCancelar")) {
+                    document.getElementById("idIngresado").disabled = false;
+                    document.getElementById("idIngresado").placeholder = "";
+                    $formDatos.style.display = "block";
+                    $formAbm.style.display = "none";
+                }
+            });
+
+            document.addEventListener("dblclick", (event) => {
+                if(event.target.tagName == "TD") {
+                    $botonCrear.style.display = "none";
+                    $formDatos.style.display = "none";
+                    $formAbm.style.display = "block";
+                    $botonEliminar.style.display = "inline-block";
+                    $botonModificar.style.display = "inline-block";
+
+                    let idSeleccionado = event.target.parentElement.firstChild.textContent;
+                    let seleccionado = PersonaRepository.obtenerPorId(idSeleccionado);
+
+                    document.getElementById("idIngresado").disabled = true;
+                    document.getElementById("idIngresado").value = seleccionado.id;
+                    document.getElementById("nombreIngresado").value = seleccionado.nombre;
+                    document.getElementById("apellidoIngresado").value = seleccionado.apellido;
+                    document.getElementById("edadIngresado").value = seleccionado.edad;
+                    
+
+                    $contenedorDatosHeroe.style.display = "none";
+                    $contenedorDatosVillano.style.display = "none";
+                    if(seleccionado instanceof Heroe) {
+                        $contenedorDatosHeroe.style.display = "block";
+                        document.getElementById("alteregoIngresado").value = seleccionado.alterego;
+                        document.getElementById("ciudadIngresado").value = seleccionado.ciudad;
+                        document.getElementById("publicadoIngresado").value = seleccionado.publicado;
+                    } else {
+                        $contenedorDatosVillano.style.display = "block";
+
+                        document.getElementById("enemigoIngresado").value = seleccionado.enemigo;
+                        document.getElementById("robosIngresado").value = seleccionado.robos;
+                        document.getElementById("asesinatosIngresado").value = seleccionado.asesinatos;
+                    }
+                }
+            });
+        });
+
+        function mostrarTabla(etiquetaContenedor, tipo) {
+
+            let tabla = crearTabla(obtenerFiltrados(tipo), tipo);
+            etiquetaContenedor.appendChild(tabla);
+        }
+
+        function obtenerFiltrados(tipo) {
+            let lista = PersonaRepository.obtenerTodos();
+
+            if(tipo == "heroe") {
+                lista = lista.filter(p => p instanceof Heroe);
+            } else if(tipo == "villano") {
+                lista = lista.filter(p => p instanceof Villano);
+            }
+
+            return lista;
+        }
+
+
+        function toggleVisibilidadColumna(columna) {
+            document.querySelectorAll(`#col-${columna}`).forEach(n => n.style.display = n.style.display == "none" ? "" : "none");
+        }
+
+        function crearOpcionesColumnas(tipo) {
+            let propiedades;
+            if(tipo == "heroe") {
+                propiedades = Object.getOwnPropertyNames(new Heroe());
+            } else if(tipo == "villano") {
+                propiedades = Object.getOwnPropertyNames(new Villano());
+            } else {
+                propiedades = Object.getOwnPropertyNames(new Persona());
+            }
+
+            const $contenedorOpciones = document.getElementById("opciones-columnas");
+
+            while ($contenedorOpciones.hasChildNodes()) {
+                $contenedorOpciones.removeChild($contenedorOpciones.firstChild)
+            }
+
+            propiedades.forEach((p, i) => {
+                let elementoOpt = document.createElement("input");
+                let elementoLbl = document.createElement("label");
+                elementoOpt.setAttribute("id", "chkToggle");
+                elementoOpt.setAttribute("type", "checkbox");
+                elementoOpt.setAttribute("value", i+1);
+                elementoOpt.classList.add("form-check-input", "m-1");
+                elementoOpt.checked = true;
+                elementoLbl.setAttribute("for", p);
+                elementoLbl.classList.add("form-check-label");
+                elementoLbl.textContent = p;
+                $contenedorOpciones.appendChild(elementoOpt);
+                $contenedorOpciones.appendChild(elementoLbl);
+            });
+        }
+
+        function crearTabla(lista, tipo) {
+            try {
+                let propiedades;
+
+                let todasProps;
+                if(tipo == "heroe") {
+                    propiedades = Object.getOwnPropertyNames(new Heroe());
+                } else if(tipo == "villano") {
+                    propiedades = Object.getOwnPropertyNames(new Villano());
+                } else {
+                    propiedades = Object.getOwnPropertyNames(new Persona());
+                }
+
+                let tabla = document.createElement("table");
+                tabla.setAttribute("id", "tabla");
+                tabla.classList.add("table", "table-striped")
+                let elementosThTabla = propiedades.map((p, i) => {
+                    let th = document.createElement("th");
+                    th.setAttribute("id", `col-${i+1}`);
+                    th.textContent = p;
+                    return th;
+                });
+                
+                let elementosTrTabla = lista.map((p, i) => {
+                    let trFila = document.createElement("tr");
+                    trFila.setAttribute("id", "fila");
+                    let valoresProps = p.toString().split(",").map(s => s.split(":")[1]);
+                    let tdsFila = valoresProps.map((vp, i) => {
+                        let tdContenido = document.createElement("td");
+                        tdContenido.setAttribute("id", `col-${i+1}`);
+                        tdContenido.textContent = vp;
+                        return tdContenido;
+                    });
+
+                    tdsFila.forEach((dato, i) => {
+                        if(elementosThTabla.length > i) {
+                            trFila.appendChild(dato);
+                        }
+                    });
+
+                    return trFila;
+                });
+                
+                tabla.appendChild(document.createElement("thead"));
+                tabla.appendChild(document.createElement("tbody"));
+
+                elementosThTabla.forEach(h => tabla.childNodes[0].appendChild(h));
+                elementosTrTabla.forEach(r => tabla.childNodes[1].appendChild(r));
+
+                return tabla;
+            }catch(err) {
+                alert("Error al generar la tabla.");
+                console.log(err);
+            }
+        }
+        class Persona {
+
+            constructor(id, nombre, apellido, edad) { 
+                this.id = id;
+                this.nombre = nombre;
+                this.apellido = apellido;
+                this.edad = edad;
+            }   
+
+            validarCrear() {
+
+                if(!this.nombre || this.nombre === "") {
+                    throw new Error("Ingrese un nombre valido!");
+                }
+
+                if(!this.apellido || this.apellido === "") {
+                    throw new Error("Ingrese un apellido valido!");
+                }
+
+                if(!this.edad || this.edad < 15) {
+                    throw new Error("Ingrese una edad valida!");
+                }
+            }
+
+            toString() {
+                return `Id: ${this.id}, Nombre: ${this.nombre}, Apellido: ${this.apellido}, Edad: ${this.edad}`;
+            }
+
+            toJson() {
+                return `{ "id": ${this.id}, "nombre": "${this.nombre}", "apellido": "${this.apellido}", "edad": ${this.edad} }`;
+            }
+        }
+
+        class Heroe extends Persona {
+            constructor(id, nombre, apellido, edad, alterego, ciudad, publicado) {
+                super(id, nombre, apellido, edad);
+                this.alterego = alterego;
+                this.ciudad = ciudad;
+                this.publicado = publicado;
+            }
+
+            validarCrear() {
+                super.validarCrear();
+                if(!this.alterego || this.alterego === "") {
+                    throw new Error("Ingrese un alter ego valido!");
+                }
+
+                if(!this.ciudad || this.ciudad === "") {
+                    throw new Error("Ingrese una ciudad valido!");
+                }
+
+                if(!this.publicado || this.publicado < 1940) {
+                    throw new Error("Ingrese unio de publicacion valido! (mayor a 1940)");
+                }
+            }
+
+            toString() {
+                return `${super.toString()}, AlterEgo: ${this.alterego}, Ciudad: ${this.ciudad}, Publicado: ${this.publicado}`;
+            }
+
+            toJson() {
+                return `${super.toJson().replace("}", ",")}"alterego": "${this.alterego}", "ciudad": "${this.ciudad}", "publicado": ${this.publicado}}`;
+            }
+
+        }
+
+        class Villano extends Persona {
+
+            constructor(id, nombre, apellido, edad, enemigo, robos, asesinatos) {
+                super(id, nombre, apellido, edad);
+                this.enemigo = enemigo;
+                this.robos = robos;
+                this.asesinatos = asesinatos;
+            }
+
+            validarCrear() {
+                super.validarCrear();
+                if(!this.enemigo || this.enemigo === "") {
+                    throw new Error("Ingrese un enemigo valido!");
+                }
+
+                if(!this.robos || this.robos < 0) {
+                    throw new Error("Ingrese una cantidad de robos valida!");
+                }
+
+                if(!this.asesinatos || this.asesinatos < 0) {
+                    throw new Error("Ingrese una cantidad de asesinatos!");
+                }
+            }
+
+            toString() {
+                return `${super.toString()}, Enemigo: ${this.enemigo}, Robos: ${this.robos}, Asesinatos: ${this.asesinatos}`;
+            }
+
+            toJson() {
+                return `${super.toJson().replace("}", ",")}"enemigo": "${this.enemigo}", "robos": ${this.robos}, "asesinatos": ${this.asesinatos}}`;
+            }
+        }
+
+        class PersonaRepository {
+            static listaSerializada = `[{"id":1, "nombre":"Clark", "apellido":"Kent", "edad":45, "alterego":"Superman", "ciudad":"Metropolis",
+            "publicado":2002},{"id":2, "nombre":"Bruce", "apellido":"Wayne", "edad":35, "alterego":"Batman", "ciudad":"Gotica",
+            "publicado":20012},{"id":3, "nombre":"Bart", "apellido":"Alen", "edad":30, "alterego":"Flash", "ciudad":"Central",
+            "publicado":2017},{"id":4, "nombre":"Lex", "apellido":"Luthor", "edad":18, "enemigo":"Superman", "robos":500,
+            "asesinatos":7},{"id":5, "nombre":"Harvey", "apellido":"Dent", "edad":20, "enemigo":"Batman", "robos":750,
+            "asesinatos":2},{"id":666, "nombre":"Celina", "apellido":"kyle", "edad":23, "enemigo":"Batman", "robos":25,
+            "asesinatos":1}]`
+            static lista;
+
+            static #inicializarLista() {
+                let datos = JSON.parse(this.listaSerializada);
+
+                let personasMapeadas = datos.map((p) => {
+                    if(p.hasOwnProperty("alterego")) {
+                        return new Heroe(p.id, p.nombre, p.apellido, p.edad, p.alterego, p.ciudad, p.publicado);
+                    } else if(p.hasOwnProperty("asesinatos")) {
+                        return new Villano(p.id, p.nombre, p.apellido, p.edad, p.enemigo, p.robos, p.asesinatos);
+                    } else {
+                        throw new TypeError("Objeto no soportado.");
+                    }
+                });
+
+                return personasMapeadas;
+            }
+
+            static #obtenerUltimoId() {
+                if(this.obtenerTodos().length == 0) {
+                    return 0;
+                }
+                return this.obtenerTodos().map(p => p.id).reduce((anterior, siguiente) => Math.max(anterior, siguiente));
+            }
+
+            static obtenerTodos() {
+                if(!this.lista) {
+                    this.lista = this.#inicializarLista();
+                }
+                return this.lista;
+            }
+
+            static obtenerPorId(id) {
+                return this.obtenerTodos().filter(p => p.id == id)[0];
+            }
+
+            static eliminarPorId(id) {
+                this.obtenerTodos().splice(this.obtenerTodos().findIndex(p => p.id == id), 1);
+            }
+
+            static agregar(nueva) {
+                nueva.id = this.#obtenerUltimoId() + 1;
+                this.lista.push(nueva);
+                let personaEnJson = nueva.toJson();
+                this.listaSerializada = this.listaSerializada.replace("]",",") + personaEnJson + "]";
+            }
+
+            static modificar(id, datosNuevos) {
+                let itemAModificar = this.obtenerPorId(id);
+                datosNuevos.validarCrear();
+                itemAModificar.nombre = datosNuevos.nombre;
+                itemAModificar.apellido = datosNuevos.apellido;
+                itemAModificar.edad = datosNuevos.edad;
+                if(itemAModificar instanceof Heroe) {
+                    itemAModificar.alterego = datosNuevos.alterego;
+                    itemAModificar.ciudad = datosNuevos.ciudad;
+                    itemAModificar.publicado = datosNuevos.publicado;
+                } else {
+                    itemAModificar.enemigo = datosNuevos.enemigo;
+                    itemAModificar.robos = datosNuevos.robos;
+                    itemAModificar.asesinatos = datosNuevos.asesinatos;
+                }
+            }
+        }
+    </script>
 </head>
 <body>
-    
+    <div id="form-datos" class="centrar-texto mx-auto col-10 col-md-8 col-lg-6">
+        <div class="form-control mt-3">
+            <h5>Form datos</h5>
+            <label>Filtrar por:</label>
+            <select id="seleccion-tipo" class="form-control">
+                <option value="persona">Todos</option>
+                <option value="heroe">Heroes</option>
+                <option value="villano">Villanos</option>
+            </select>
+            <label>Calcular edad promedio:</label>
+            <input type="number" id="resultadoEdadPromedio" class="form-control"/>
+            <button id="btnEdadPromedio" class="btn btn-danger">Calcular</button>
+            <div>
+                <label>Mostrar columnas:</label>
+                <span id="opciones-columnas" class="mx-5 form-switch"></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="form-abm" class="centrar-texto mx-auto col-10 col-md-8 col-lg-6">
+        <div class="form-control mt-3">
+            <h5>Formulario ABM</h5>
+            <div class="form-group">
+                <label for="idIngresado">ID:</label>
+                <input type="number" id="idIngresado" class="form-control"/>
+            </div>
+            <div class="form-group">
+                <label for="tipoIngresado">Seleccionar tipo:</label>
+                <select id="tipoIngresado" class="form-control">
+                    <option value="heroe">Heroe</option>
+                    <option value="villano">Villano</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="nombreIngresado">Nombre:</label>
+                <input type="text" id="nombreIngresado" class="form-control"  placeholder="Ingrese nombre..."/>
+            </div>
+            <div class="form-group">
+                <label for="apellidoIngresado">Apellido:</label>
+                <input type="text" id="apellidoIngresado" class="form-control" placeholder="Ingrese apellido..."/>
+            </div>
+            <div class="form-group">
+                <label for="edadIngresado">Edad:</label>
+                <input type="number" id="edadIngresado" class="form-control" placeholder="Ingrese edad..."/>
+            </div>
+            <!-- PROPS HEROE -->
+            <div id="props-heroe">
+                <div class="form-group">
+                    <label for="alteregoIngresado">Alter ego:</label>
+                    <input type="text" id="alteregoIngresado" class="form-control" placeholder="Ingrese alter ego..."/>
+                </div>
+                <div class="form-group">
+                    <label for="ciudadIngresado">Ciudad:</label>
+                    <input type="text" id="ciudadIngresado" class="form-control" placeholder="Ingrese ciudad..."/>
+                </div>
+                <div class="form-group">
+                    <label for="publicadoIngresado">Publicado:</label>
+                    <input type="number" id="publicadoIngresado" class="form-control" placeholder="Ingrese publicado..."/>
+                </div>
+            </div>
+            <!-- ENDPROPS HEROE -->
+            <!-- PROPS VILLANO -->
+            <div id="props-villano">
+                <div class="form-group">
+                    <label for="enemigoIngresado">Enemigo:</label>
+                    <input type="text" id="enemigoIngresado" class="form-control" placeholder="Ingrese enemigo..."/>
+                </div>
+                <div class="form-group">
+                    <label for="robosIngresado">Robos:</label>
+                    <input type="number" id="robosIngresado" class="form-control" placeholder="Ingrese robos..."/>
+                </div>
+                <div class="form-group">
+                    <label for="asesinatosIngresado">Asesinatos:</label>
+                    <input type="number" id="asesinatosIngresado" class="form-control" placeholder="Ingrese asesinatos..."/>
+                </div>
+            </div>
+            <!-- ENDPROPS VILLANO -->
+            <div class="mt-2">
+                <button id="btnAbmAceptar" class="btn btn-success">Alta</button>
+                <button id="btnAbmModificar" class="btn btn-warning">Modificar</button>
+                <button id="btnAbmEliminar" class="btn btn-danger">Eliminar</button>
+                <button id="btnAbmCancelar" class="btn btn-primary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="contenedor-tabla" class="centrar-texto mx-auto col-10 col-md-8 col-lg-9 border mt-3">
+    </div>
+    <div class="mx-auto col-10 col-md-8 col-lg-9 mt-3">
+        <button id="btnAgregar" class="btn btn-success">Agregar nuevo</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
 </body>
 </html>
