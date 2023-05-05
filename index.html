@@ -14,6 +14,7 @@
     <script>
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Datos
             const $contenedorTabla = document.getElementById("contenedor-tabla");
             const $seleccionTipoPersona = document.getElementById("seleccion-tipo");
             const $resultadoEdadPromedio = document.getElementById("resultadoEdadPromedio");
@@ -241,15 +242,12 @@
             document.querySelectorAll(`#col-${columna}`).forEach(n => n.style.display = n.style.display == "none" ? "" : "none");
         }
 
-        function crearOpcionesColumnas(tipo) {
+        function crearOpcionesColumnas() {
             let propiedades;
-            if(tipo == "heroe") {
-                propiedades = Object.getOwnPropertyNames(new Heroe());
-            } else if(tipo == "villano") {
-                propiedades = Object.getOwnPropertyNames(new Villano());
-            } else {
-                propiedades = Object.getOwnPropertyNames(new Persona());
-            }
+
+            propiedades = Object.getOwnPropertyNames(new Heroe());
+            propiedades = propiedades.concat(Object.getOwnPropertyNames(new Villano()));
+            propiedades = [ ...new Set(propiedades) ] // crea un set a partir del array y lo convierte a array nuevamente
 
             const $contenedorOpciones = document.getElementById("opciones-columnas");
 
@@ -277,14 +275,9 @@
             try {
                 let propiedades;
 
-                let todasProps;
-                if(tipo == "heroe") {
-                    propiedades = Object.getOwnPropertyNames(new Heroe());
-                } else if(tipo == "villano") {
-                    propiedades = Object.getOwnPropertyNames(new Villano());
-                } else {
-                    propiedades = Object.getOwnPropertyNames(new Persona());
-                }
+                propiedades = Object.getOwnPropertyNames(new Heroe());
+                propiedades = propiedades.concat(Object.getOwnPropertyNames(new Villano()));
+                propiedades = [ ...new Set(propiedades) ] // crea un set a partir del array y lo convierte a array nuevamente
 
                 let tabla = document.createElement("table");
                 tabla.setAttribute("id", "tabla");
@@ -299,18 +292,16 @@
                 let elementosTrTabla = lista.map((p, i) => {
                     let trFila = document.createElement("tr");
                     trFila.setAttribute("id", "fila");
-                    let valoresProps = p.toString().split(",").map(s => s.split(":")[1]);
-                    let tdsFila = valoresProps.map((vp, i) => {
+                    //let valoresProps = p.toString().split(",").map(s => s.split(":")[1]);
+                    let tdsFila = propiedades.map((vp, i) => {
                         let tdContenido = document.createElement("td");
                         tdContenido.setAttribute("id", `col-${i+1}`);
-                        tdContenido.textContent = vp;
+                        tdContenido.textContent = p[`${vp}`] ?? "--";
                         return tdContenido;
                     });
 
                     tdsFila.forEach((dato, i) => {
-                        if(elementosThTabla.length > i) {
-                            trFila.appendChild(dato);
-                        }
+                        trFila.appendChild(dato);
                     });
 
                     return trFila;
@@ -531,7 +522,7 @@
                 <option value="villano">Villanos</option>
             </select>
             <label>Calcular edad promedio:</label>
-            <input type="number" id="resultadoEdadPromedio" class="form-control"/>
+            <input type="number" id="resultadoEdadPromedio" class="form-control" disabled/>
             <button id="btnEdadPromedio" class="btn btn-danger">Calcular</button>
             <div>
                 <label>Mostrar columnas:</label>
