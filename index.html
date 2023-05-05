@@ -26,6 +26,8 @@
             const $botonModificar = document.getElementById("btnAbmModificar");
             const $botonEliminar = document.getElementById("btnAbmEliminar");
             const $botonCrear = document.getElementById("btnAbmAceptar");
+            // Ordenamiento
+            let ordenandoAscendente = true;
 
             $botonEliminar.style.display = "none";
             $botonModificar.style.display = "none";
@@ -167,6 +169,16 @@
                     document.getElementById("idIngresado").placeholder = "";
                     $formDatos.style.display = "block";
                     $formAbm.style.display = "none";
+                }
+
+                if(event.target.tagName == "TH") {
+                    PersonaRepository.ordenar(event.target.textContent, ordenandoAscendente);
+                    ordenandoAscendente = !ordenandoAscendente;
+                    while ($contenedorTabla.hasChildNodes()) {
+                            $contenedorTabla.removeChild($contenedorTabla.firstChild)
+                        }
+                    mostrarTabla($contenedorTabla, "todos");
+                    crearOpcionesColumnas("todos");
                 }
             });
 
@@ -468,6 +480,25 @@
                 this.lista.push(nueva);
                 let personaEnJson = nueva.toJson();
                 this.listaSerializada = this.listaSerializada.replace("]",",") + personaEnJson + "]";
+            }
+
+            static ordenar(criterio, ascendente) {
+                console.log(this.obtenerTodos());
+                this.obtenerTodos().sort((a, b) =>  {
+                    if(a[`${criterio}`] > b[`${criterio}`]) {
+                        return 1;
+                    }
+
+                    if(a[`${criterio}`] < b[`${criterio}`]) {
+                        return -1;
+                    }
+
+                    return 0;
+                });
+
+                if(!ascendente) {
+                    this.obtenerTodos().reverse();
+                }
             }
 
             static modificar(id, datosNuevos) {
